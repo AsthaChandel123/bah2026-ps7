@@ -1,0 +1,56 @@
+# --- Python bytecode / caches --------------------------------------------- #
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# --- Packaging / build artifacts ------------------------------------------ #
+build/
+dist/
+*.egg-info/
+.eggs/
+wheels/
+*.egg
+pip-wheel-metadata/
+
+# --- Virtual environments ------------------------------------------------- #
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# --- Test / type / lint caches -------------------------------------------- #
+.pytest_cache/
+.cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# --- Pipeline caches & data (keep configs/ and tests/) -------------------- #
+.cache/
+data/
+outputs/
+*.parquet
+*.zarr/
+*.h5
+*.hdf5
+*.fits
+*.npy
+*.npz
+*.joblib
+*.pkl
+
+# --- Notebooks / editors / OS --------------------------------------------- #
+.ipynb_checkpoints/
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# --- Logs ----------------------------------------------------------------- #
+*.log

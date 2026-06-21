@@ -1,0 +1,118 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "exopipe"
+version = "0.1.0"
+description = "AI detection and classification of exoplanet transits in noisy TESS light curves (BAH 2026 PS7)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "exopipe contributors" }]
+keywords = [
+    "exoplanets",
+    "transit",
+    "TESS",
+    "light-curve",
+    "astronomy",
+    "time-series",
+    "machine-learning",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+# Core runtime: deliberately minimal so the foundation imports anywhere.
+dependencies = [
+    "numpy>=1.23",
+    "scipy>=1.9",
+    "matplotlib>=3.5",
+    "pandas>=1.5",
+]
+
+[project.optional-dependencies]
+# Astronomy / transit-science stack.
+science = [
+    "astropy>=5.1",
+    "lightkurve>=2.4",
+    "transitleastsquares>=1.0.31",
+    "wotan>=1.10",
+    "batman-package>=2.4.9",
+    "emcee>=3.1",
+    "dynesty>=2.1",
+    "astroquery>=0.4.6",
+]
+# Classical machine learning.
+ml = [
+    "scikit-learn>=1.2",
+    "xgboost>=1.7",
+    "lightgbm>=3.3",
+]
+# Deep learning.
+dl = [
+    "torch>=2.0",
+]
+# Performance / scaling / columnar I/O.
+perf = [
+    "numba>=0.57",
+    "joblib>=1.2",
+    "pyarrow>=12.0",
+    "zarr>=2.14",
+    "bottleneck>=1.3",
+    "hnswlib>=0.7",
+]
+# Interactive app & rich plotting.
+app = [
+    "streamlit>=1.25",
+    "plotly>=5.14",
+]
+# Configuration loading.
+config = [
+    "pyyaml>=6.0",
+]
+# Development tooling.
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.1",
+]
+# Convenience: everything.
+all = [
+    "exopipe[science,ml,dl,perf,app,config,dev]",
+]
+
+[project.scripts]
+exopipe = "exopipe.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/exopipe/exopipe"
+Repository = "https://github.com/exopipe/exopipe"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+ignore = ["E501"]

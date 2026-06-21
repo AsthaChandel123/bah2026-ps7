@@ -56,11 +56,17 @@ def test_package_imports_and_version():
         assert hasattr(exopipe, name)
 
 
-def test_lazy_process_lightcurve_does_not_break_import():
-    # Accessing the lazy attribute before the pipeline module exists must raise
-    # AttributeError (not ImportError) and must not have broken `import exopipe`.
-    with pytest.raises(AttributeError):
-        _ = exopipe.process_lightcurve
+def test_lazy_process_lightcurve_is_importable_and_callable():
+    # The lazy attribute resolves the real pipeline entry point (PEP 562
+    # __getattr__) without having broken `import exopipe`. Now that
+    # ``exopipe.pipeline.process_lightcurve`` exists it must be importable
+    # both as a lazy top-level attribute and from its module, and be callable.
+    fn = exopipe.process_lightcurve
+    assert callable(fn)
+
+    from exopipe.pipeline import process_lightcurve as direct
+
+    assert fn is direct
 
 
 # --------------------------------------------------------------------------- #

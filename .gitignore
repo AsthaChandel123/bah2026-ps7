@@ -37,6 +37,7 @@ coverage.xml
 .cache/
 /data/
 /outputs/
+/runs/
 *.parquet
 *.zarr/
 *.h5

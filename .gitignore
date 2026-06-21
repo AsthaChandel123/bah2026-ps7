@@ -66,3 +66,8 @@ Thumbs.db
 !examples/**
 !report/**
 !docs/**
+
+# --- Ship the one trained classifier the pipeline loads ------------------- #
+# `*.joblib` above ignores all model blobs; negate the single committed model
+# (a few MB) so `ensemble.load_models("models")` finds it on a fresh checkout.
+!models/exopipe_clf.joblib

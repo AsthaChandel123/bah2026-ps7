@@ -61,12 +61,17 @@ def _cmd_demo(args: argparse.Namespace) -> int:
     cfg = default_config()
     cfg.perf.n_jobs = args.n_jobs
 
+    # Load the trained classifier (if present) so predictions use the calibrated
+    # ML model + rules + physics veto rather than the rules-only floor.
+    models = _load_classifier_models(getattr(args, "model_dir", "models"), log)
+
     print(f"  running pipeline → {out_dir} (figures={'on' if args.figures else 'off'}) …")
     with Timer("demo.run_batch", logger=log):
         results = run_batch(
             population,
             config=cfg,
             n_jobs=args.n_jobs,
+            models=models,
             out_dir=out_dir,
             make_figures=args.figures,
             top_k_figures=args.top_k,
@@ -162,12 +167,15 @@ def _cmd_run(args: argparse.Namespace) -> int:
         print(f"error: no light curves loaded from {args.input!r}", file=sys.stderr)
         return 2
 
+    models = _load_classifier_models(getattr(args, "model_dir", "models"), log)
+
     out_dir = Path(args.out)
     print(f"exopipe {__version__} — run: {len(lightcurves)} light curve(s) → {out_dir}")
     run_batch(
         lightcurves,
         config=cfg,
         n_jobs=args.n_jobs,
+        models=models,
         out_dir=out_dir,
         make_figures=args.figures,
         top_k_figures=args.top_k,
@@ -217,6 +225,31 @@ def _load_input(input_path: str, log: Any) -> list[Any]:
             log.warning("Skipping FITS %s (%s).", fits_path, exc)
 
     return lightcurves
+
+
+def _load_classifier_models(model_dir: str, log: Any) -> dict[str, Any]:
+    """Load the trained classifier bundle for ``run_batch`` (best-effort).
+
+    Returns the mapping produced by
+    :func:`exopipe.classify.ensemble.load_models` (``{'ml': MLClassifier, ...}``)
+    when a model is found under ``model_dir``, else an empty dict so the ensemble
+    cleanly degrades to its rules + physics-veto floor. Never raises — a missing
+    or unreadable model must not abort a run/demo.
+    """
+    try:
+        from .classify.ensemble import load_models
+
+        models = load_models(model_dir)
+    except Exception as exc:  # pragma: no cover - optional-dep / IO robustness
+        log.warning("Could not load classifier models from %r (%s); using rules only.",
+                    model_dir, exc)
+        return {}
+
+    if models.get("ml") is not None:
+        print(f"  loaded trained classifier from {model_dir}/ (ML + rules + veto).")
+    else:
+        print(f"  no trained classifier in {model_dir}/; using rules + physics veto only.")
+    return models
 
 
 # =========================================================================== #
@@ -578,6 +611,8 @@ def build_parser() -> argparse.ArgumentParser:
     demo.add_argument("--top-k", type=int, default=12, dest="top_k", help="Figures for top-K candidates.")
     demo.add_argument("--n-jobs", type=int, default=1, dest="n_jobs", help="Parallel workers (1=serial).")
     demo.add_argument("--fmt", default="csv", choices=["csv", "parquet"], help="Catalog format.")
+    demo.add_argument("--model-dir", default="models", dest="model_dir",
+                      help="Directory holding the trained classifier (exopipe_clf.joblib).")
     demo.set_defaults(func=_cmd_demo)
 
     # -- run ---------------------------------------------------------------- #
@@ -589,6 +624,8 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--top-k", type=int, default=50, dest="top_k", help="Figures for top-K candidates.")
     run.add_argument("--n-jobs", type=int, default=-1, dest="n_jobs", help="Parallel workers (-1=all cores).")
     run.add_argument("--fmt", default="csv", choices=["csv", "parquet"], help="Catalog format.")
+    run.add_argument("--model-dir", default="models", dest="model_dir",
+                     help="Directory holding the trained classifier (exopipe_clf.joblib).")
     run.add_argument("--resume", action="store_true", help="Skip already-completed TICs (O(1) manifest).")
     run.set_defaults(func=_cmd_run)
 

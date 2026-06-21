@@ -31,9 +31,12 @@ htmlcov/
 coverage.xml
 
 # --- Pipeline caches & data (keep configs/ and tests/) -------------------- #
+# NOTE: runtime-output dirs are ROOT-ANCHORED (leading /) so they only match
+# repo-root output dirs and never shadow source/example dirs such as
+# src/exopipe/data/ or examples/.
 .cache/
-data/
-outputs/
+/data/
+/outputs/
 *.parquet
 *.zarr/
 *.h5
@@ -54,3 +57,11 @@ Thumbs.db
 
 # --- Logs ----------------------------------------------------------------- #
 *.log
+
+# --- Allow curated example artifacts to be committed ---------------------- #
+# Placed AFTER the glob patterns above (*.parquet, *.fits, *.png, ...) so these
+# negations win and a curated examples/ , report/ , docs/ tree can hold
+# committed artifacts later.
+!examples/**
+!report/**
+!docs/**

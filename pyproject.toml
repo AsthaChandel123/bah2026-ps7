@@ -51,9 +51,14 @@ science = [
     "astroquery>=0.4.6",
 ]
 # Classical machine learning.
+# xgboost is pinned <2.1: from 2.1.0 onward the Linux x86_64 wheels declare a
+# hard `nvidia-nccl-cu12` dependency (a multi-hundred-MB CUDA library), which
+# would bloat the CPU-only Cloud Run image. 2.0.x is the last NCCL-free line and
+# loads the bundled `models/exopipe_clf.joblib` fine. Install torch/CUDA wheels
+# separately if GPU training is ever needed (see DEPLOY.md).
 ml = [
     "scikit-learn>=1.2",
-    "xgboost>=1.7",
+    "xgboost>=1.7,<2.1",
     "lightgbm>=3.3",
 ]
 # Deep learning.
@@ -80,6 +85,24 @@ config = [
 ]
 # Development tooling.
 dev = [
+    "pytest>=7.0",
+    "ruff>=0.1",
+]
+# Reproducible CI test set: the curated dependency closure under which the FULL
+# test suite passes. Heavy optional deps (torch, lightkurve, transitleastsquares)
+# are deliberately EXCLUDED -- the tests `pytest.importorskip` them, so they skip
+# cleanly in CI. Install with `pip install -e ".[test]"`.
+test = [
+    "numpy>=1.23",
+    "scipy>=1.9",
+    "matplotlib>=3.5",
+    "pandas>=1.5",
+    "astropy>=5.1",
+    "scikit-learn>=1.2",
+    "xgboost>=1.7,<2.1",
+    "batman-package>=2.4.9",
+    "emcee>=3.1",
+    "pyyaml>=6.0",
     "pytest>=7.0",
     "ruff>=0.1",
 ]

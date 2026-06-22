@@ -1,0 +1,67 @@
+# exopipe Docker build context.
+#
+# Goal: ship a small, reproducible image that still carries everything the two
+# runtime shapes need -- the dashboard service (app/, examples/, models/) and
+# the batch job (src/, configs/, report/template.md). Everything below is
+# excluded; explicit re-includes (!) at the end guarantee the runtime assets
+# survive even if a broad glob would otherwise drop them.
+
+# --- VCS / CI ------------------------------------------------------------- #
+.git
+.gitignore
+.github
+
+# --- Research & docs not needed at runtime -------------------------------- #
+research/
+ARCHITECTURE.md
+idea.md
+
+# --- Runtime output / caches ---------------------------------------------- #
+runs/
+outputs/
+data/
+.cache/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# --- Python bytecode / build artifacts ------------------------------------ #
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# --- Dev / editor / virtualenv -------------------------------------------- #
+.venv/
+venv/
+env/
+ENV/
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# --- Tests & loose dev scripts (not needed in the image) ------------------ #
+tests/
+scripts/
+
+# --- Docker / deploy meta (not needed inside the image) ------------------- #
+Dockerfile
+.dockerignore
+DEPLOY.md
+
+# --- Re-include the runtime assets the broad globs above would drop -------- #
+# (app/ defaults to examples/; the batch job reads configs/ + report template.)
+!src/
+!pyproject.toml
+!README.md
+!configs/
+!app/
+!examples/
+!models/
+!report/template.md
+!docker/

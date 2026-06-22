@@ -1,0 +1,100 @@
+name: Deploy to Cloud Run
+
+# MANUAL ONLY. `workflow_dispatch` means this never runs on push/PR, so it can
+# never break PR CI -- you trigger it from the Actions tab when you want to ship.
+#
+# ---------------------------------------------------------------------------
+# Required repository configuration (Settings -> Secrets and variables -> Actions)
+#
+#   Secrets:
+#     GCP_WIF_PROVIDER   Workload Identity Federation provider resource name, e.g.
+#                        projects/123456789/locations/global/workloadIdentityPools/github/providers/github
+#     GCP_SERVICE_ACCOUNT  Deploy service account email, e.g.
+#                        exopipe-deployer@my-project.iam.gserviceaccount.com
+#
+#   Variables:
+#     GCP_PROJECT        GCP project id            (e.g. my-project)
+#     GCP_REGION         Cloud Run / AR region     (e.g. us-central1)
+#     AR_REPO            Artifact Registry repo name (e.g. exopipe)
+#
+# One-time GCP setup (see DEPLOY.md for the full walkthrough):
+#   gcloud services enable run.googleapis.com artifactregistry.googleapis.com iamcredentials.googleapis.com
+#   gcloud artifacts repositories create "$AR_REPO" --repository-format=docker --location="$GCP_REGION"
+#   ...plus a Workload Identity pool/provider bound to this repo and the deploy SA.
+# ---------------------------------------------------------------------------
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag to build and deploy
+        required: false
+        default: latest
+
+permissions:
+  contents: read
+  id-token: write   # required for Workload Identity Federation (keyless auth)
+
+env:
+  SERVICE: exopipe-dashboard
+  JOB: exopipe-batch
+
+jobs:
+  deploy:
+    name: Build, push, and deploy dashboard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (Workload Identity Federation)
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT }}
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Compute image reference
+        id: image
+        run: |
+          IMAGE="${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT }}/${{ vars.AR_REPO }}/exopipe:${{ github.event.inputs.tag }}"
+          echo "ref=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push image
+        run: |
+          docker build -t "${{ steps.image.outputs.ref }}" .
+          docker push "${{ steps.image.outputs.ref }}"
+
+      - name: Deploy dashboard service (Cloud Run)
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE }}
+          image: ${{ steps.image.outputs.ref }}
+          region: ${{ vars.GCP_REGION }}
+          # Streamlit holds a websocket per client -> pin sessions to one instance.
+          flags: >-
+            --port=8080
+            --allow-unauthenticated
+            --memory=1Gi
+            --cpu=1
+            --session-affinity
+
+      # The sector-scale batch JOB shares this same image. It is not a service,
+      # so it is managed out-of-band. After this workflow pushes a new image,
+      # point the job at it and run a sector with:
+      #
+      #   gcloud run jobs update exopipe-batch \
+      #     --image ${{ steps.image.outputs.ref }} \
+      #     --region ${{ vars.GCP_REGION }}
+      #   gcloud run jobs execute exopipe-batch --region ${{ vars.GCP_REGION }}
+      #
+      # (Create it once -- see DEPLOY.md -- then this update/execute is all you need.)
+      - name: Report deployed image
+        run: echo "Deployed ${{ env.SERVICE }} from ${{ steps.image.outputs.ref }}"

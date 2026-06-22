@@ -50,8 +50,11 @@ CLASS_COLORS = {
     "other": "#999999",
 }
 
-_DEFAULT_CATALOG = "outputs/catalog.csv"
-_DEFAULT_FIGDIR = "outputs/vetting_sheets"
+# Defaults point at the bundled example results so a freshly deployed container
+# (or a bare ``streamlit run app/dashboard.py`` with no ``--`` args) immediately
+# renders a populated dashboard. Override via ``-- --catalog <p> --figdir <d>``.
+_DEFAULT_CATALOG = "examples/example_catalog.csv"
+_DEFAULT_FIGDIR = "examples"
 
 
 # --------------------------------------------------------------------------- #

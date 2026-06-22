@@ -1,0 +1,8 @@
+# exopipe -- core runtime dependencies.
+# These four are all that is needed to import the package, generate synthetic
+# data, and run the foundation test suite. Install with:
+#     pip install -r requirements-core.txt
+numpy>=1.23
+scipy>=1.9
+matplotlib>=3.5
+pandas>=1.5

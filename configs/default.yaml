@@ -1,0 +1,70 @@
+# exopipe -- default configuration.
+# Mirrors exopipe.config.Config. A user config need only override the keys it
+# cares about; load_config() merges this structure onto the dataclass defaults.
+
+seed: 42
+
+data:
+  source: synthetic        # synthetic | mast | local
+  data_dir: data
+  sector: null
+  cadence_min: 2.0
+  flux_column: pdcsap_flux
+  sigma_clip: 5.0
+  quality_bitmask: default # none | default | hard
+
+detrend:
+  method: biweight         # biweight | median | savgol | gp | none
+  window_factor: 3.0       # window length as a multiple of expected duration
+  window_length: null      # explicit window in days; overrides window_factor
+  break_tolerance: 0.5     # days; split detrending across larger gaps
+  edge_cutoff: 0.0         # days trimmed from segment edges after detrending
+
+search:
+  period_min: 0.5
+  period_max: 15.0
+  methods: [bls, tls]
+  min_sde: 7.0
+  min_snr: 7.0
+  n_durations: 8
+  duration_min: 0.02       # days
+  duration_max: 0.5        # days
+  oversample: 5
+  n_transits_min: 2
+
+vetting:
+  odd_even_sigma: 3.0
+  secondary_sigma: 3.0
+  v_shape_threshold: 0.3
+  centroid_sigma: 3.0
+  min_transit_snr: 5.0
+
+classify:
+  method: xgboost          # xgboost | random_forest | cnn | rules
+  model_path: null
+  classes: [transit, eclipsing_binary, blend, other]
+  threshold: 0.5
+
+fit:
+  sampler: emcee           # emcee | dynesty | least_squares
+  nsteps: 2000
+  nwalkers: 32
+  nburn: 500
+  limb_dark: quadratic
+  fit_eccentricity: false
+  progress: false
+
+viz:
+  dpi: 120
+  style: default
+  save_dir: outputs/figures
+  fmt: png
+  n_phase_bins: 100
+  show: false
+
+perf:
+  n_jobs: -1
+  cache_dir: .cache
+  use_numba: true
+  backend: loky            # joblib backend
+  chunk_size: 64
